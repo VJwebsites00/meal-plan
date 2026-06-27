@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Plan de repas saisonnier — 20 recettes pour deux, organisées par saison." />
+  <title>Nos Repas — Plan Saisonnier</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ========================================================
+       EN-TÊTE
+       ======================================================== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="header-eyebrow">Plan de repas saisonnier</span>
+      <h1 class="site-title">Nos Repas</h1>
+      <p class="header-sub">2 personnes · Fait maison · Marché bio</p>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       NAVIGATION SAISONNIÈRE
+       Remplie dynamiquement par renderSeasonTabs() dans app.js
+       ======================================================== -->
+  <nav class="season-nav" id="season-nav" aria-label="Navigation par saison"></nav>
+
+  <!-- ========================================================
+       GRILLE DE RECETTES
+       Remplie dynamiquement par renderRecipeCards() dans app.js
+       ======================================================== -->
+  <main>
+    <div class="recipe-grid" id="recipe-grid"></div>
+  </main>
+
+  <!-- ========================================================
+       MODAL — FICHE RECETTE
+       Ouvert/fermé par openRecipeModal() / closeModal() dans app.js
+       Contenu injecté dynamiquement dans #modal-content
+       ======================================================== -->
+  <div
+    class="modal-overlay"
+    id="modal-overlay"
+    aria-hidden="true"
+  >
+    <div
+      class="modal"
+      id="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <!-- Bouton de fermeture — écouté par app.js via #modal-close -->
+      <button
+        type="button"
+        class="modal-close"
+        id="modal-close"
+        aria-label="Fermer la recette"
+      >✕</button>
+
+      <!-- Zone de contenu — remplacée entièrement à chaque ouverture -->
+      <div class="modal-body" id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCRIPTS
+       data.js en premier : expose la variable globale `recipes`
+       app.js en second  : lit `recipes` et manipule le DOM
+       ======================================================== -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

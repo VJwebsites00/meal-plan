@@ -1,0 +1,768 @@
+/* ============================================================
+   MEAL PLAN — styles.css
+   Organisation : variables → reset → typographie → layout →
+   header → navigation → grille → cartes → badges → modal →
+   contenu modal → portions → ingrédients → étapes → timers →
+   notes → état vide → thèmes saisonniers → responsive → a11y
+   ============================================================ */
+
+
+/* ============================================================
+   0. VARIABLES GLOBALES
+   ============================================================ */
+
+:root {
+  /* Palette de base */
+  --beige:          #F5F0E8;
+  --beige-dark:     #E8E0CE;
+  --white-warm:     #FEFCF8;
+  --charcoal:       #2C2C2C;
+  --grey-mid:       #6B6B6B;
+  --grey-light:     #BCBCBC;
+
+  /* Couleurs fixes (badges) */
+  --carne-bg:       #F2DDD5;
+  --carne-text:     #7A3520;
+  --vege-bg:        #D4E8D5;
+  --vege-text:      #2A5C2E;
+
+  /* Accent saisonnier — écrasé par .s-{saison} sur body */
+  --accent:         #C4704F;
+  --accent-bg:      #FAEAE3;
+  --accent-dark:    #A0522D;
+
+  /* Ombres */
+  --shadow-card:    0 2px 12px rgba(44, 44, 44, 0.08);
+  --shadow-modal:   0 -6px 40px rgba(44, 44, 44, 0.18);
+
+  /* Rayons */
+  --radius-card:    14px;
+  --radius-sm:      8px;
+  --radius-pill:    100px;
+
+  /* Transitions */
+  --ease:           0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ============================================================
+   1. THÈMES SAISONNIERS
+   Appliqués sur <body> par app.js via classList.
+   Toutes les variables --accent / --accent-bg en découlent.
+   ============================================================ */
+
+.s-ete      { --accent: #C4704F; --accent-bg: #FAEAE3; --accent-dark: #A04030; }
+.s-automne  { --accent: #A0622A; --accent-bg: #F5E8D6; --accent-dark: #7A4A1A; }
+.s-hiver    { --accent: #7A9E7E; --accent-bg: #E4F0E5; --accent-dark: #4E7A52; }
+.s-printemps{ --accent: #5B8F52; --accent-bg: #E6F3E4; --accent-dark: #3A6833; }
+
+
+/* ============================================================
+   2. RESET & BASE
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--beige);
+  color: var(--charcoal);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+
+/* ============================================================
+   3. EN-TÊTE
+   ============================================================ */
+
+.site-header {
+  background-color: var(--white-warm);
+  border-bottom: 1px solid var(--beige-dark);
+  padding: 28px 20px 22px;
+  text-align: center;
+}
+
+.header-eyebrow {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-mid);
+  margin-bottom: 6px;
+}
+
+.site-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.header-sub {
+  font-size: 0.76rem;
+  color: var(--grey-mid);
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+}
+
+
+/* ============================================================
+   4. NAVIGATION SAISONNIÈRE
+   ============================================================ */
+
+.season-nav {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  background-color: var(--white-warm);
+  border-bottom: 1px solid var(--beige-dark);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.season-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.season-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1.5px solid var(--beige-dark);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--grey-mid);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color var(--ease), background var(--ease), border-color var(--ease);
+}
+
+/* Chaque bouton porte sa propre classe de saison :
+   l'accent couleur est donc contextuel au bouton lui-même */
+.season-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: var(--accent-bg);
+}
+
+.season-btn.active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--white-warm);
+}
+
+.season-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+/* ============================================================
+   5. GRILLE DE RECETTES
+   ============================================================ */
+
+main {
+  padding: 20px 16px 40px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+
+/* ============================================================
+   6. CARTES RECETTES
+   La bordure gauche colorée est l'élément signature : elle ancre
+   chaque carte dans sa saison sans alourdir la composition.
+   ============================================================ */
+
+.recipe-card {
+  background: var(--white-warm);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border-left: 4px solid var(--accent);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--ease), box-shadow var(--ease);
+  display: flex;
+  flex-direction: column;
+}
+
+.recipe-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(44, 44, 44, 0.13);
+}
+
+.recipe-card:active {
+  transform: translateY(0);
+}
+
+.card-body {
+  padding: 18px 18px 14px;
+  flex: 1;
+}
+
+.card-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.card-description {
+  font-size: 0.82rem;
+  color: var(--grey-mid);
+  line-height: 1.55;
+}
+
+.card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--beige-dark);
+  background: var(--beige);
+}
+
+
+/* ============================================================
+   7. BADGES
+   ============================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.71rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.badge-type-carne {
+  background: var(--carne-bg);
+  color: var(--carne-text);
+}
+
+.badge-type-vege {
+  background: var(--vege-bg);
+  color: var(--vege-text);
+}
+
+.badge-cuisine,
+.badge-time {
+  background: var(--beige-dark);
+  color: var(--grey-mid);
+}
+
+
+/* ============================================================
+   8. ÉTAT VIDE (saison sans recettes)
+   ============================================================ */
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--grey-mid);
+}
+
+.empty-state-icon {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 14px;
+}
+
+.empty-state p {
+  font-size: 0.88rem;
+}
+
+
+/* ============================================================
+   9. MODAL — OVERLAY
+   ============================================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 26, 22, 0.52);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;   /* bottom-sheet sur mobile */
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: opacity var(--ease), visibility var(--ease);
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* ============================================================
+   10. MODAL — PANNEAU
+   ============================================================ */
+
+.modal {
+  position: relative;
+  background: var(--white-warm);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow-modal);
+  /* Glisse depuis le bas sur mobile */
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay.open .modal {
+  transform: translateY(0);
+}
+
+/* Poignée visuelle (drag handle) */
+.modal::before {
+  content: '';
+  display: block;
+  width: 38px;
+  height: 4px;
+  background: var(--beige-dark);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+/* Bouton ✕ — flotte en haut à droite, reste visible au scroll */
+.modal-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: 14px 14px 0 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--beige);
+  color: var(--grey-mid);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ease), color var(--ease);
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: var(--beige-dark);
+  color: var(--charcoal);
+}
+
+.modal-body {
+  padding: 0 22px 36px;
+  clear: both;
+}
+
+
+/* ============================================================
+   11. CONTENU MODAL — EN-TÊTE
+   ============================================================ */
+
+.modal-recipe-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.modal-description {
+  font-size: 0.87rem;
+  color: var(--grey-mid);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.modal-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+
+/* ============================================================
+   12. LIBELLÉ DE SECTION (réutilisé dans le modal)
+   ============================================================ */
+
+.section-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--grey-mid);
+  margin-bottom: 12px;
+}
+
+
+/* ============================================================
+   13. SÉLECTEUR DE PORTIONS
+   ============================================================ */
+
+.serving-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--beige);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.serving-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.serving-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.serving-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background var(--ease), color var(--ease);
+  /* Taille de tap confortable sur mobile */
+  touch-action: manipulation;
+}
+
+.serving-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.serving-btn:disabled {
+  border-color: var(--grey-light);
+  color: var(--grey-light);
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.serving-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  min-width: 1.6ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ============================================================
+   14. LISTE D'INGRÉDIENTS
+   ============================================================ */
+
+.ingredients-section {
+  margin-bottom: 28px;
+}
+
+.ingredients-list {
+  /* list-style: none déjà appliqué globalement */
+}
+
+.ingredient-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--beige-dark);
+  font-size: 0.86rem;
+}
+
+.ingredient-item:last-child {
+  border-bottom: none;
+}
+
+.ingredient-name {
+  color: var(--charcoal);
+  flex: 1;
+}
+
+.ingredient-amount {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   15. ÉTAPES DE PRÉPARATION
+   ============================================================ */
+
+.steps-section {
+  margin-bottom: 28px;
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.step-item {
+  display: flex;
+  gap: 14px;
+  transition: background 0.3s ease, border-radius 0.3s ease, padding 0.3s ease;
+}
+
+/* Flash vert à la fin d'un minuteur */
+.step-item.step-done {
+  background: #d6f0da;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.step-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-title {
+  font-size: 0.87rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+
+.step-text {
+  font-size: 0.83rem;
+  color: var(--grey-mid);
+  line-height: 1.6;
+}
+
+
+/* ============================================================
+   16. MINUTEURS (timer buttons)
+   ============================================================ */
+
+.timer-row {
+  margin-top: 10px;
+}
+
+.timer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+  touch-action: manipulation;
+}
+
+.timer-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Minuteur en cours : fond plein + légère pulsation */
+.timer-btn.running {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  animation: timer-pulse 2s ease-in-out infinite;
+}
+
+/* Minuteur en pause */
+.timer-btn.paused {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: none;
+}
+
+/* Minuteur terminé : vert accessible (ratio 4.6:1 blanc sur #3A7D40) */
+.timer-btn.done {
+  background: #3A7D40;
+  border-color: #3A7D40;
+  color: white;
+  animation: none;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.72; }
+}
+
+
+/* ============================================================
+   17. NOTES / ASTUCE DU CHEF
+   ============================================================ */
+
+.notes-section {
+  background: var(--beige);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+}
+
+.notes-section .section-label {
+  margin-bottom: 6px;
+}
+
+.notes-text {
+  font-size: 0.83rem;
+  color: var(--grey-mid);
+  line-height: 1.65;
+  font-style: italic;
+}
+
+
+/* ============================================================
+   18. RESPONSIVE — TABLETTE (≥ 560px)
+   ============================================================ */
+
+@media (min-width: 560px) {
+  .recipe-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+/* ============================================================
+   19. RESPONSIVE — DESKTOP (≥ 768px)
+   Le modal passe de bottom-sheet à overlay centré.
+   ============================================================ */
+
+@media (min-width: 768px) {
+  main {
+    padding: 28px 24px 60px;
+  }
+
+  .modal-overlay {
+    align-items: center;
+  }
+
+  .modal {
+    border-radius: 20px;
+    max-height: 88vh;
+    /* Remplace le glissement par un scale-in centré */
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity   0.28s ease;
+  }
+
+  .modal-overlay.open .modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+
+/* ============================================================
+   20. RESPONSIVE — LARGE (≥ 960px)
+   ============================================================ */
+
+@media (min-width: 960px) {
+  .recipe-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+/* ============================================================
+   21. ACCESSIBILITÉ
+   ============================================================ */
+
+/* Focus visible pour la navigation clavier */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Réduction des animations si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
