@@ -696,7 +696,274 @@ main {
 
 
 /* ============================================================
-   18. RESPONSIVE — TABLETTE (≥ 560px)
+   18. SOUS-NAVIGATION : RECETTES / COURSES
+   Style "onglet souligné" pour se distinguer visuellement
+   des boutons-pilules de la navigation saisonnière (niveau 1).
+   ============================================================ */
+
+.sub-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 0 16px;
+  background-color: var(--white-warm);
+  border-bottom: 1px solid var(--beige-dark);
+}
+
+.sub-tab {
+  padding: 10px 24px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  background: transparent;
+  color: var(--grey-mid);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--ease), border-color var(--ease);
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+
+.sub-tab:hover {
+  color: var(--accent);
+}
+
+.sub-tab.active {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+
+/* ============================================================
+   19. MATRICE INGRÉDIENTS × RECETTES
+   ============================================================ */
+
+/* Conteneur pleine largeur dans la grille */
+.matrix-wrapper {
+  grid-column: 1 / -1;
+}
+
+.matrix-hint {
+  font-size: 0.72rem;
+  color: var(--grey-mid);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Scroll horizontal sur mobile */
+.matrix-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white-warm);
+  font-size: 0.83rem;
+  min-width: 380px;
+}
+
+/* Colonne ingrédient fixe lors du scroll horizontal */
+.col-ingredient {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--white-warm);
+}
+
+/* En-têtes */
+.matrix-head-ingredient {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey-mid);
+  background: var(--beige);
+  border-right: 1px solid var(--beige-dark);
+  border-bottom: 1px solid var(--beige-dark);
+  white-space: nowrap;
+}
+
+.matrix-head-recipe {
+  padding: 8px 6px;
+  text-align: center;
+  background: var(--beige);
+  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--beige-dark);
+  cursor: pointer;
+  min-width: 58px;
+  transition: color var(--ease), background var(--ease), border-color var(--ease);
+}
+
+.matrix-head-recipe:last-of-type {
+  border-right: none;
+}
+
+.matrix-col-num {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--grey-mid);
+  transition: color var(--ease);
+}
+
+.matrix-recipe-name {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: var(--grey-light);
+  line-height: 1.3;
+  margin-top: 2px;
+  transition: color var(--ease);
+}
+
+.matrix-head-recipe:hover .matrix-col-num,
+.matrix-head-recipe.active .matrix-col-num {
+  color: var(--accent);
+}
+
+.matrix-head-recipe:hover .matrix-recipe-name,
+.matrix-head-recipe.active .matrix-recipe-name {
+  color: var(--accent);
+}
+
+.matrix-head-recipe:hover,
+.matrix-head-recipe.active {
+  background: var(--accent-bg);
+  border-bottom-color: var(--accent);
+}
+
+.matrix-head-qty {
+  padding: 10px 10px;
+  text-align: right;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey-mid);
+  background: var(--beige);
+  border-left: 1px solid var(--beige-dark);
+  border-bottom: 1px solid var(--beige-dark);
+  white-space: nowrap;
+}
+
+/* Ligne séparatrice de catégorie */
+.matrix-cat-row td {
+  padding: 7px 14px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--grey-mid);
+  background: var(--beige-dark);
+  border-top: 1px solid var(--beige-dark);
+  border-bottom: 1px solid var(--beige-dark);
+  letter-spacing: 0.04em;
+}
+
+/* Ligne ingrédient */
+.matrix-row td {
+  border-bottom: 1px solid var(--beige-dark);
+  transition: background var(--ease);
+}
+
+.matrix-row:last-child td {
+  border-bottom: none;
+}
+
+.matrix-cell-ingredient {
+  padding: 9px 14px;
+  text-align: left;
+  color: var(--charcoal);
+  font-size: 0.84rem;
+  border-right: 1px solid var(--beige-dark);
+}
+
+.matrix-cell-recipe {
+  text-align: center;
+  padding: 9px 4px;
+  border-right: 1px solid var(--beige-dark);
+  transition: background var(--ease);
+}
+
+.matrix-cell-recipe:last-of-type {
+  border-right: none;
+}
+
+.matrix-cell-recipe.col-highlight {
+  background: var(--accent-bg);
+}
+
+.matrix-dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.55;
+  vertical-align: middle;
+  transition: opacity var(--ease), transform var(--ease);
+}
+
+.col-highlight .matrix-dot {
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+.matrix-empty-dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--beige-dark);
+  vertical-align: middle;
+}
+
+.matrix-cell-qty {
+  padding: 9px 10px;
+  text-align: right;
+  font-size: 0.81rem;
+  font-weight: 700;
+  color: var(--accent);
+  border-left: 1px solid var(--beige-dark);
+  white-space: nowrap;
+}
+
+.matrix-shared-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  background: var(--accent-bg);
+  border-radius: var(--radius-pill);
+  padding: 1px 6px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* Légende sous la matrice */
+.matrix-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.matrix-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.71rem;
+  color: var(--grey-mid);
+}
+
+
+/* ============================================================
+   20. RESPONSIVE — TABLETTE (≥ 560px)
    ============================================================ */
 
 @media (min-width: 560px) {
