@@ -41,14 +41,38 @@ const UNIT_LABELS = {
 };
 
 
-// ============================================================
-// 1. ÉTAT GLOBAL
-// ============================================================
+// Catégories d'ingrédients (ordre = priorité de classification)
+const INGREDIENT_CATEGORIES = [
+  { id: 'viandes',    icon: '🥩', label: 'Viandes & Poissons',
+    keywords: ['poulet','bœuf','saumon','dinde','agneau','porc','crevette','thon',
+               'filet de','escalope','côtelette','haché'] },
+  { id: 'legumes',    icon: '🥦', label: 'Légumes & Fruits',
+    keywords: ['tomate','oignon','ail','poivron','courgette','aubergine','carotte',
+               'haricot vert','asperge','petits pois','poireau','courge','butternut',
+               'épinard','céleri','pomme','citron','champignon','gingembre',
+               'basilic','menthe','persil'] },
+  { id: 'frais',      icon: '🥛', label: 'Produits Frais',
+    keywords: ['crème fraîche','beurre','œuf','chèvre','parmesan','miso','fromage'] },
+  { id: 'epicerie',   icon: '🌾', label: 'Épicerie & Féculents',
+    keywords: ['riz','pâtes','tagliatelle','linguine','spaghetti','orzo','ditalini',
+               'semoule','farine','lentille','pois chiche','haricot blanc','boîte',
+               'concassé','bouillon'] },
+  { id: 'condiments', icon: '🧴', label: 'Sauces & Condiments',
+    keywords: ['huile','sauce soja','moutarde','miel','vinaigre','câpre','lait de coco'] },
+  { id: 'epices',     icon: '🌿', label: 'Herbes & Épices',
+    keywords: ['sel','poivre','cumin','coriandre','cannelle','curcuma','paprika',
+               'thym','romarin','herbe','pincée'] },
+];
 
-let activeSeason   = detectCurrentSeason();
-let activeRecipe   = null;
+
+
+
+let activeSeason    = detectCurrentSeason();
+let activeView      = 'recettes';  // 'recettes' | 'courses'
+let activeMatrixCol = null;
+let activeRecipe    = null;
 let currentServings = 2;
-let timerState     = {};  // { stepId: { intervalId, remaining, total, running } }
+let timerState      = {};  // { stepId: { intervalId, remaining, accumulated, resumedAt, running } }
 
 
 // ============================================================
@@ -87,9 +111,12 @@ function renderSeasonTabs() {
     btn.innerHTML = `<span class="season-icon" aria-hidden="true">${season.icon}</span>${season.label}`;
 
     btn.addEventListener('click', () => {
-      activeSeason = season.id;
+      activeSeason    = season.id;
+      activeView      = 'recettes';
+      activeMatrixCol = null;
       renderSeasonTabs();
-      renderRecipeCards();
+      renderSubTabs();
+      renderContent();
     });
 
     nav.appendChild(btn);
@@ -547,12 +574,220 @@ function formatAmount(value) {
 
 
 // ============================================================
-// 15. INITIALISATION
+// 15. SOUS-NAVIGATION : RECETTES / COURSES
+// IDs HTML requis : #sub-nav
+// Classes CSS injectées : .sub-tab, .sub-tab.active
+// ============================================================
+
+function renderSubTabs() {
+  const nav = document.getElementById('sub-nav');
+  if (!nav) return;
+  nav.innerHTML = '';
+
+  [
+    { id: 'recettes', label: '🍳 Recettes' },
+    { id: 'courses',  label: '🛒 Courses'  },
+  ].forEach(view => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sub-tab' + (activeView === view.id ? ' active' : '');
+    btn.textContent = view.label;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', activeView === view.id ? 'true' : 'false');
+    btn.addEventListener('click', () => switchView(view.id));
+    nav.appendChild(btn);
+  });
+}
+
+function switchView(view) {
+  activeView      = view;
+  activeMatrixCol = null;
+  renderSubTabs();
+  renderContent();
+}
+
+function renderContent() {
+  if (activeView === 'courses') {
+    renderShoppingMatrix();
+  } else {
+    renderRecipeCards();
+  }
+}
+
+
+// ============================================================
+// 16. LISTE DE COURSES : MATRICE INGRÉDIENTS × RECETTES
+// IDs HTML requis : #recipe-grid (réutilisé comme zone de contenu)
+// Classes CSS injectées : .matrix-wrapper, .matrix-hint,
+//   .matrix-scroll, .matrix-table, .matrix-head-*, .matrix-cat-row,
+//   .matrix-row, .matrix-cell-*, .matrix-dot, .matrix-empty-dot,
+//   .matrix-shared-badge, .matrix-recipe-name, .matrix-legend
+// ============================================================
+
+function categorizeIngredient(name) {
+  const n = name.toLowerCase();
+  for (const cat of INGREDIENT_CATEGORIES) {
+    if (cat.keywords.some(kw => n.includes(kw))) return cat.id;
+  }
+  return 'epices'; // Fallback
+}
+
+function buildShortTitle(title) {
+  const stop = new Set(['de','à','la','le','les','du','des','aux','au','et','en',
+                        'un','une','sur','par','avec','sans']);
+  const words = title.split(/[\s,\-–]+/).filter(w => w && !stop.has(w.toLowerCase()));
+  return words.slice(0, 2).join(' ');
+}
+
+function getConsolidatedQty(recipeAmounts) {
+  const present = recipeAmounts.filter(a => a !== null);
+  if (!present.length) return '—';
+  const byUnit = {};
+  present.forEach(({ amount, unit }) => {
+    const k = unit ?? '__null';
+    byUnit[k] = (byUnit[k] || 0) + amount;
+  });
+  return Object.entries(byUnit).map(([unit, amount]) => {
+    const f = formatAmount(amount);
+    return unit === '__null' ? f : `${f} ${UNIT_LABELS[unit] || unit}`;
+  }).join(' + ');
+}
+
+function buildShoppingData(seasonRecipes) {
+  const map = new Map(); // name → { name, category, recipeAmounts[] }
+  seasonRecipes.forEach((recipe, idx) => {
+    recipe.ingredients.forEach(ing => {
+      if (!map.has(ing.name)) {
+        map.set(ing.name, {
+          name: ing.name,
+          category: categorizeIngredient(ing.name),
+          recipeAmounts: new Array(seasonRecipes.length).fill(null),
+        });
+      }
+      map.get(ing.name).recipeAmounts[idx] = { amount: ing.amount, unit: ing.unit };
+    });
+  });
+  const grouped = {};
+  map.forEach(ing => {
+    if (!grouped[ing.category]) grouped[ing.category] = [];
+    grouped[ing.category].push(ing);
+  });
+  return INGREDIENT_CATEGORIES
+    .filter(cat => grouped[cat.id]?.length)
+    .map(cat => ({ ...cat, ingredients: grouped[cat.id] }));
+}
+
+function renderShoppingMatrix() {
+  const grid = document.getElementById('recipe-grid');
+  const seasonRecipes = recipes.filter(r => r.season === activeSeason);
+
+  if (!seasonRecipes.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-state-icon">🛒</span>
+        <p>Les recettes de cette saison arrivent bientôt !</p>
+      </div>`;
+    return;
+  }
+
+  const N          = seasonRecipes.length;
+  const cats       = buildShoppingData(seasonRecipes);
+  const totalItems = cats.reduce((s, c) => s + c.ingredients.length, 0);
+
+  const headerCells = seasonRecipes.map((r, i) => `
+    <th class="matrix-head-recipe" data-col="${i}" title="${r.title}">
+      <span class="matrix-col-num">R${i + 1}</span>
+      <span class="matrix-recipe-name">${buildShortTitle(r.title)}</span>
+    </th>`).join('');
+
+  let bodyHTML = '';
+  cats.forEach(cat => {
+    bodyHTML += `
+      <tr class="matrix-cat-row">
+        <td colspan="${N + 2}">${cat.icon} ${cat.label}</td>
+      </tr>`;
+    cat.ingredients.forEach(ing => {
+      const sharedCount = ing.recipeAmounts.filter(a => a !== null).length;
+      const qty = getConsolidatedQty(ing.recipeAmounts);
+      bodyHTML += `
+        <tr class="matrix-row">
+          <td class="matrix-cell-ingredient col-ingredient">
+            ${ing.name}${sharedCount > 1
+              ? `<span class="matrix-shared-badge">×${sharedCount}</span>`
+              : ''}
+          </td>
+          ${ing.recipeAmounts.map((a, i) => `
+            <td class="matrix-cell-recipe" data-col="${i}">
+              ${a !== null
+                ? '<span class="matrix-dot"></span>'
+                : '<span class="matrix-empty-dot"></span>'}
+            </td>`).join('')}
+          <td class="matrix-cell-qty">${qty}</td>
+        </tr>`;
+    });
+  });
+
+  grid.innerHTML = `
+    <div class="matrix-wrapper">
+      <p class="matrix-hint">
+        ${N} recette${N > 1 ? 's' : ''} · ${totalItems} articles
+        — toucher R1–R${N} pour filtrer par recette
+      </p>
+      <div class="matrix-scroll">
+        <table class="matrix-table" id="matrix-table">
+          <thead>
+            <tr>
+              <th class="matrix-head-ingredient col-ingredient">Ingrédient</th>
+              ${headerCells}
+              <th class="matrix-head-qty">Quantité</th>
+            </tr>
+          </thead>
+          <tbody>${bodyHTML}</tbody>
+        </table>
+      </div>
+      <div class="matrix-legend">
+        <span>
+          <span class="matrix-dot" style="opacity:1;display:inline-block;vertical-align:middle"></span>
+          Utilisé dans la recette
+        </span>
+        <span>
+          <span class="matrix-empty-dot" style="display:inline-block;vertical-align:middle"></span>
+          Non requis
+        </span>
+        <span>
+          <span class="matrix-shared-badge" style="margin-left:0">×N</span>
+          Partagé entre N recettes
+        </span>
+      </div>
+    </div>`;
+
+  bindMatrixInteractions();
+}
+
+function bindMatrixInteractions() {
+  document.querySelectorAll('.matrix-head-recipe').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = parseInt(th.dataset.col, 10);
+      activeMatrixCol = activeMatrixCol === col ? null : col;
+      document.querySelectorAll('.matrix-head-recipe').forEach((h, i) => {
+        h.classList.toggle('active', i === activeMatrixCol);
+      });
+      document.querySelectorAll('.matrix-cell-recipe').forEach(td => {
+        td.classList.toggle('col-highlight', parseInt(td.dataset.col, 10) === activeMatrixCol);
+      });
+    });
+  });
+}
+
+
+// ============================================================
+// 17. INITIALISATION
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
   renderSeasonTabs();
-  renderRecipeCards();
+  renderSubTabs();
+  renderContent();
 
   // Fermer en cliquant sur le fond de l'overlay
   document.getElementById('modal-overlay').addEventListener('click', e => {
